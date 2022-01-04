@@ -52,6 +52,9 @@ data:
   # for the queue proxy sidecar container.
   # If omitted, no value is specified and the system default is used.
   queue-sidecar-ephemeral-storage-limit: "1024Mi"
+  # concurrency-state-endpoint is the endpoint that queue-proxy calls when its traffic drops to zero or
+  # scales up from zero.
+  concurrency-state-endpoint: ""
 ```
 
 ## Configuring progress deadlines
@@ -105,4 +108,28 @@ metadata:
 data:
   # List of repositories for which tag to digest resolving should be skipped
   registries-skipping-tag-resolving: registry.example.com
+```
+
+## Enable Freezer Service
+
+You can configure queue-proxy to call a endpoint when it's traffic drops to zero or scales up from zero by modifying `concurrency-state-endpoint` ConfigMap setting. With this configuration, you can achieve some features like freezing runing process in user-contianer or charing calculation based on time of handling requests。
+
+Before you configure this, your need to implement this endpoint API. The official implementation is [container-freezer](https://github.com/knative-sandbox/container-freezer).
+
+The following example show how to enable Freezer Service, when using `$HOST_IP`, the freezer service will swap in the appropriate value for each node at runtime:
+
+```yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: config-deployment
+  namespace: knative-serving
+  labels:
+    serving.knative.dev/release: devel
+  annotations:
+    knative.dev/example-checksum: "fa67b403"
+data:
+  # concurrency-state-endpoint is the endpoint that queue-proxy calls when its traffic drops to zero or
+  # scales up from zero.
+  concurrency-state-endpoint: "http://$HOST_IP:9696"
 ```
